@@ -1,0 +1,913 @@
+/*
+   THEMES: neutral black/white, pink is the only color combination that i hate, so i will
+   use it for this
+*/
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #09090a;
+  --panel: #111113;
+  --fg: #d9d9dd;
+  --dim: #85858c;
+  --strong: #ffffff;
+  --line: #2a2a2f;
+
+  --p1: #ffc4dc;
+  --p2: #ff8fc0;
+  --p3: #ff4d9a;
+  --accent: var(--p2);
+  --on-accent: #1b0713;
+  --glow: rgba(255, 105, 170, 0.45);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f5f6;
+  --panel: #ffffff;
+  --fg: #2a2a2f;
+  --dim: #76767d;
+  --strong: #000000;
+  --line: #dadade;
+
+  --p1: #dc7aa5;
+  --p2: #c4407f;
+  --p3: #94195a;
+  --accent: var(--p2);
+  --on-accent: #ffffff;
+  --glow: rgba(196, 64, 127, 0.3);
+}
+
+/*
+   BASE
+*/
+* {
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: var(--p3) transparent;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family:
+    "JetBrains Mono", Consolas, "Cascadia Mono", "Courier New", monospace;
+  font-variant-ligatures: none;
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: left;
+}
+
+::selection {
+  background: var(--p2);
+  color: var(--on-accent);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.dim {
+  color: var(--dim);
+}
+.err {
+  color: var(--p3);
+}
+
+button {
+  background: none;
+  border: 0;
+  padding: 0 0.3rem;
+  color: var(--fg);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+button:hover {
+  color: var(--accent);
+}
+button.active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/*
+   ANIMATIONS
+*/
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/*
+   WINDOW FRAME
+*/
+.term {
+  height: 100vh;
+  height: 100dvh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+main {
+  min-height: 0;
+  overflow: hidden;
+}
+main > * {
+  height: 100%;
+}
+
+.titlebar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+
+.dots i {
+  display: inline-block;
+  width: 0.7rem;
+  height: 0.7rem;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+}
+.dots i:nth-child(1) {
+  background: var(--p1);
+}
+.dots i:nth-child(2) {
+  background: var(--p2);
+}
+.dots i:nth-child(3) {
+  background: var(--p3);
+  box-shadow: 0 0 10px var(--glow);
+}
+
+.wtitle {
+  color: var(--strong);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.theme-toggle {
+  justify-self: end;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.1rem 1ch;
+  color: var(--accent);
+}
+.theme-toggle:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 14px -4px var(--glow);
+}
+[data-theme="dark"] .t-light,
+[data-theme="light"] .t-dark {
+  display: none;
+}
+
+.statusbar {
+  display: flex;
+  align-items: stretch;
+  gap: 1ch;
+  font-size: 0.85em;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+}
+.statusbar > span {
+  padding: 0.15rem 1ch;
+}
+.sb-mode {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+.sb-path {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
+}
+.sb-grow {
+  flex: 1;
+  color: var(--dim);
+}
+.sb-face {
+  color: var(--accent);
+}
+
+/*
+   HOME LAYOUT
+*/
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36ch;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.mhead {
+  display: none;
+} /* phone-only header */
+
+.main {
+  padding: 1.5rem 1.5rem 3rem;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.side {
+  border-left: 1px solid var(--line);
+  padding: 1.2rem 1rem 2rem;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--accent) 3%, var(--bg));
+}
+
+/* ---------- pixel title ---------- */
+.banner {
+  font-family: inherit;
+  line-height: 1.1;
+  white-space: pre;
+  margin: 0 0 0.6rem;
+  overflow-x: auto;
+  background: linear-gradient(180deg, var(--p1), var(--p2) 55%, var(--p3));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 10px var(--glow));
+}
+.banner-lg {
+  font-size: clamp(0.4rem, 1.25vw, 1rem);
+}
+.banner-sm {
+  font-size: clamp(0.4rem, 2.5vw, 0.8rem);
+}
+
+.tagline {
+  color: var(--dim);
+  margin: 0 0 1.4rem;
+}
+
+/* ---------- command / search bar ---------- */
+.prompt {
+  display: flex;
+  align-items: center;
+  gap: 0.8ch;
+  padding: 0.55rem 0.9rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  margin-bottom: 1.4rem;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.prompt:focus-within {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent),
+    0 0 26px -8px var(--glow);
+}
+.ps1 {
+  white-space: nowrap;
+}
+.ps1 .u {
+  color: var(--p2);
+  font-weight: 700;
+}
+.ps1 .at {
+  color: var(--dim);
+}
+.ps1 .h {
+  color: var(--p1);
+  font-weight: 700;
+}
+.ps1 .pth {
+  color: var(--p3);
+}
+.ps1 .ar {
+  color: var(--accent);
+}
+
+.prompt input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: 0;
+  outline: 0;
+  color: var(--strong);
+  font: inherit;
+  caret-color: var(--accent);
+}
+.prompt input::placeholder {
+  color: var(--dim);
+}
+.cursor {
+  color: var(--accent);
+  animation: blink 1.1s linear infinite;
+}
+
+.rule {
+  display: flex;
+  align-items: center;
+  gap: 1ch;
+  color: var(--dim);
+  margin-bottom: 0.3rem;
+}
+.rule::before {
+  content: "──";
+}
+.rule::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dashed var(--line);
+}
+
+/* ---------- command output panel ---------- */
+.output {
+  margin-top: 0.4rem;
+  padding: 0.9rem 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  line-height: 1.6;
+  animation: fadeIn 0.2s ease-out;
+}
+.output .echo {
+  color: var(--strong);
+  margin-bottom: 0.6rem;
+}
+.output .oh {
+  color: var(--accent);
+  margin-bottom: 0.4rem;
+}
+.output .dim {
+  margin-top: 0.5rem;
+}
+.orow {
+  display: grid;
+  grid-template-columns: 20ch 1fr;
+  gap: 0 2ch;
+}
+.orow b {
+  color: var(--accent);
+  font-weight: 700;
+}
+.lrow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 1.5ch;
+  margin: 0.3rem 0;
+}
+.lrow b {
+  color: var(--strong);
+}
+
+/*
+   FACES: framed kaomoji status badges
+*/
+.face {
+  display: inline-block;
+  justify-self: start;
+  align-self: center;
+  width: fit-content;
+  height: fit-content;
+  min-width: 7ch;
+  padding: 0 0.7ch;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1.45;
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  background: color-mix(in srgb, currentColor 13%, transparent);
+  box-shadow: 0 0 14px -5px currentColor;
+}
+.face-all {
+  color: var(--fg);
+  box-shadow: none;
+}
+.face-experimenting {
+  color: var(--p1);
+}
+.face-learned {
+  color: var(--p2);
+}
+.face-evergreen {
+  color: var(--p3);
+}
+.face-sad {
+  color: var(--dim);
+  box-shadow: none;
+}
+
+/*
+   ENTRIES
+*/
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.log {
+  display: grid;
+  grid-template-columns: 11ch 9ch 1fr;
+  align-items: start;
+  gap: 0 1.5ch;
+  padding: 0.75rem 0.6rem;
+  border-top: 1px dashed var(--line);
+  /* highlight is ON by default */
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-left: 2px solid var(--accent);
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.date {
+  color: var(--dim);
+  padding-top: 0.1rem;
+}
+
+.log .title {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tags {
+  margin-top: 0.15rem;
+}
+.tag {
+  color: var(--accent);
+  opacity: 0.7;
+  padding: 0;
+  margin-right: 1.2ch;
+}
+.tag:hover {
+  opacity: 1;
+}
+.tag.active {
+  opacity: 1;
+  padding: 0 0.5ch;
+  border-radius: 3px;
+}
+
+/* ---------- entry hover: highlight turns OFF while hovered ---------- */
+.log:hover {
+  background: transparent;
+  border-left-color: transparent;
+}
+.log:hover .title {
+  color: var(--strong);
+}
+/* the title link itself still gets the solid pink highlight */
+.log .title:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.empty {
+  color: var(--dim);
+}
+
+/*
+   SIDEBAR: framed panes
+*/
+.box {
+  min-width: 0;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.8rem 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  transition: border-color 0.15s;
+}
+.box:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+.box legend {
+  padding: 0 0.6ch;
+  font-size: 0.9em;
+  color: var(--accent);
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.opt {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.1rem 1.2ch;
+  width: 100%;
+  padding: 0.3rem 0.5rem;
+  border-radius: 5px;
+}
+.opt:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.opt.active:hover {
+  background: var(--accent);
+}
+.opt-name small {
+  display: block;
+  color: var(--dim);
+  font-size: 0.82em;
+}
+.opt .n {
+  color: var(--dim);
+}
+.opt.active .opt-name small,
+.opt.active .n {
+  color: inherit;
+  opacity: 0.8;
+}
+.opt.active .face {
+  color: var(--on-accent);
+  box-shadow: none;
+}
+
+.cloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.6ch;
+}
+.chip {
+  padding: 0 1ch;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 5px;
+}
+.chip .n {
+  color: var(--dim);
+}
+.chip:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.chip.active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.chip.active .n {
+  color: inherit;
+  opacity: 0.8;
+}
+
+/* ---------- profile card + 1x1 photo ---------- */
+.profile {
+  border-color: var(--p2);
+  box-shadow: 0 0 28px -12px var(--glow);
+}
+
+.avatar {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  margin-bottom: 0.9rem;
+  border: 1px solid var(--p2);
+  border-radius: 8px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+        color-mix(in srgb, var(--accent) 35%, transparent) 1px,
+        transparent 1.5px
+      )
+      0 0 / 10px 10px,
+    var(--bg);
+}
+.avatar-sm {
+  width: 5.2rem;
+  margin-bottom: 0;
+}
+.avatar-ph {
+  font-size: 1.5rem;
+  color: var(--accent);
+}
+.avatar-sm .avatar-ph {
+  font-size: 0.8rem;
+}
+.avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--panel);
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.who strong {
+  color: var(--strong);
+  font-size: 1.05em;
+}
+.handle {
+  color: var(--accent);
+}
+.online {
+  margin-top: 0.3rem;
+  color: var(--dim);
+  font-size: 0.85em;
+}
+.online i {
+  display: inline-block;
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: var(--p2);
+  box-shadow: 0 0 8px var(--p2);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/*
+   SINGLE NOTE PAGE
+*/
+.page {
+  padding: 1.5rem 2rem 4rem;
+  overflow-y: auto;
+}
+.page > * {
+  max-width: 100ch;
+}
+
+.back {
+  color: var(--dim);
+  text-decoration: none;
+}
+.back:hover {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.page h1 {
+  font-size: 1.4rem;
+  color: var(--strong);
+  margin: 1rem 0 0.4rem;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.2ch;
+  margin: 0.3rem 0;
+}
+.pagetags span {
+  color: var(--accent);
+  margin-right: 1.2ch;
+}
+.page hr {
+  border: 0;
+  border-top: 1px dashed var(--line);
+  margin: 1rem 0;
+}
+
+.note h2,
+.note h3 {
+  color: var(--accent);
+  font-size: 1.05rem;
+  margin: 1.6rem 0 0.4rem;
+}
+.note a {
+  color: var(--on-accent);
+  background: var(--accent);
+  text-decoration: none;
+  padding: 2px 5px;
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.note a:hover {
+  background: var(--p3);
+}
+.note ul {
+  list-style: "♡ ";
+  padding-left: 2.5ch;
+}
+.note ol {
+  padding-left: 3ch;
+}
+.note code {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  padding: 0 0.4ch;
+  border-radius: 3px;
+}
+.note pre {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  padding: 0.8rem;
+  overflow-x: auto;
+}
+.note pre code {
+  background: none;
+  padding: 0;
+}
+.note blockquote {
+  margin: 1rem 0;
+  padding-left: 1.5ch;
+  border-left: 2px solid var(--p2);
+  color: var(--dim);
+}
+.note img {
+  max-width: 100%;
+  border-radius: 6px;
+}
+.note table {
+  border-collapse: collapse;
+}
+.note th,
+.note td {
+  border: 1px solid var(--line);
+  padding: 0.3rem 1ch;
+}
+
+/*
+   PHONE: 1x1 photo spans the full height of the title, controls stacked and compact
+*/
+@media (max-width: 800px) {
+  .term {
+    display: block;
+    height: auto;
+  }
+  main {
+    overflow: visible;
+  }
+  main > * {
+    height: auto;
+  }
+
+  .titlebar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .statusbar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+  }
+
+  .layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 0.9rem 0.8rem 1.5rem;
+  }
+
+  /* header: square photo as tall as the stacked title, title on the right */
+  .mhead {
+    --bs: min(0.8rem, calc((100vw - 3rem) / 40)); /* banner font size */
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    order: 0;
+  }
+  .mh-side {
+    flex: none;
+  }
+  .mh-side .handle {
+    display: none;
+  }
+  .avatar-sm {
+    /* title = 12 lines x 1.1 line-height, so the photo matches it exactly */
+    width: calc(13.2 * var(--bs));
+    height: calc(13.2 * var(--bs));
+    aspect-ratio: 1 / 1;
+    margin: 0;
+  }
+  .banner-sm {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    font-size: var(--bs);
+  }
+  .banner-lg,
+  .tagline {
+    display: none;
+  }
+
+  /* controls: stacked boxes with compact chips, above the entries */
+  .side {
+    order: 1;
+    display: grid;
+    gap: 0.5rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    overflow: visible;
+    font-size: 0.85em;
+  }
+  .profile {
+    display: none;
+  }
+  .side .box {
+    margin: 0;
+    padding: 0.35rem 0.6rem 0.5rem;
+  }
+  .box legend {
+    font-size: 0.85em;
+  }
+  .col {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
+  .opt {
+    display: inline-flex;
+    align-items: center;
+    width: auto;
+    gap: 0.8ch;
+    padding: 0.1rem 0.7ch;
+    border: 1px solid var(--line);
+  }
+  .opt-name small {
+    display: none;
+  }
+  .opt .face {
+    min-width: 0;
+    padding: 0 0.4ch;
+  }
+
+  .main {
+    order: 2;
+    padding: 0;
+    overflow: visible;
+  }
+  .page {
+    padding: 1.2rem 1rem 2rem;
+    overflow: visible;
+  }
+
+  .prompt {
+    padding: 0.45rem 0.7rem;
+    margin-bottom: 1rem;
+  }
+  .ps1 .u,
+  .ps1 .at,
+  .ps1 .h,
+  .ps1 .pth {
+    display: none;
+  }
+
+  .log {
+    grid-template-columns: auto 1fr;
+    gap: 0.3rem 1.5ch;
+  }
+  .log .body {
+    grid-column: 1 / -1;
+  }
+
+  .orow {
+    grid-template-columns: 1fr;
+    margin-bottom: 0.4rem;
+  }
+}

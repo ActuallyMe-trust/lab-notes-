@@ -1,0 +1,504 @@
+---
+import Base from '../layouts/Base.astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
+import { faces } from '../lib/faces';
+
+type Log = CollectionEntry<'logs'>;
+
+// ✎  profile card
+const profile = {
+  name: 'Stella JAne',
+  handle: '@astrid.serenova',
+  bio: 'learning in public, one note at a time',
+  photo: '/images/avatar.png', // file lives at public/images/avatar.png (square image)
+};
+
+const logs = (await getCollection('logs'))
+  .filter((l: Log) => !l.data.draft)
+  .sort((a: Log, b: Log) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const fmt = (d: Date) => d.toISOString().slice(0, 10);
+
+const statusKeys = ['experimenting', 'learned', 'evergreen'];
+const statusCount = (s: string) => logs.filter((l: Log) => l.data.status === s).length;
+
+const tagMap = new Map<string, number>();
+logs.forEach((l: Log) =>
+  l.data.tags.forEach((t: string) => tagMap.set(t, (tagMap.get(t) ?? 0) + 1))
+);
+const allTags = [...tagMap.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+
+// data handed to the command bar in the browser
+const appData = JSON.stringify({
+  notes: logs.map((l: Log) => ({
+    id: l.id,
+    title: l.data.title,
+    status: l.data.status,
+    tags: l.data.tags,
+    date: fmt(l.data.pubDate),
+    summary: l.data.summary ?? '',
+  })),
+  faces,
+  profile: { name: profile.name, handle: profile.handle, bio: profile.bio },
+}).replace(/</g, '\\u003c');
+---
+<Base title="Lab Notes" path="~/logs">
+  <span slot="status">♡ <span id="count">0</span>/{logs.length} shown</span>
+  <script is:inline type="application/json" id="app-data" set:html={appData}></script>
+
+  <div class="layout">
+
+    <!-- ===== PHONE HEADER: photo beside the title ===== -->
+    <header class="mhead">
+      <div class="mh-side">
+        <div class="avatar avatar-sm">
+          <span class="avatar-ph" aria-hidden="true">(◕‿◕)</span>
+          <img src={profile.photo} alt={profile.name} onerror="this.remove()" />
+        </div>
+        <span class="handle">{profile.handle}</span>
+      </div>
+<pre class="banner banner-sm" aria-hidden="true">
+██╗      █████╗ ██████╗ 
+██║     ██╔══██╗██╔══██╗
+██║     ███████║██████╔╝
+██║     ██╔══██║██╔══██╗
+███████╗██║  ██║██████╔╝
+╚══════╝╚═╝  ╚═╝╚═════╝ 
+███╗   ██╗ ██████╗ ████████╗███████╗███████╗
+████╗  ██║██╔═══██╗╚══██╔══╝██╔════╝██╔════╝
+██╔██╗ ██║██║   ██║   ██║   █████╗  ███████╗
+██║╚██╗██║██║   ██║   ██║   ██╔══╝  ╚════██║
+██║ ╚████║╚██████╔╝   ██║   ███████╗███████║
+╚═╝  ╚═══╝ ╚═════╝    ╚═╝   ╚══════╝╚══════╝
+</pre>
+    </header>
+
+    <!-- ============ MAIN ============ -->
+    <section class="main">
+      <h1 class="sr-only">Lab Notes</h1>
+<pre class="banner banner-lg" aria-hidden="true">
+██╗      █████╗ ██████╗    ███╗   ██╗ ██████╗ ████████╗███████╗███████╗
+██║     ██╔══██╗██╔══██╗   ████╗  ██║██╔═══██╗╚══██╔══╝██╔════╝██╔════╝
+██║     ███████║██████╔╝   ██╔██╗ ██║██║   ██║   ██║   █████╗  ███████╗
+██║     ██╔══██║██╔══██╗   ██║╚██╗██║██║   ██║   ██║   ██╔══╝  ╚════██║
+███████╗██║  ██║██████╔╝   ██║ ╚████║╚██████╔╝   ██║   ███████╗███████║
+╚══════╝╚═╝  ╚═╝╚═════╝    ╚═╝  ╚═══╝ ╚═════╝    ╚═╝   ╚══════╝╚══════╝
+</pre>
+
+      <p class="tagline">// things I'm learning, breaking, and keeping</p>
+
+      <label class="prompt">
+        <span class="ps1">
+          <span class="u">lab</span><span class="at">@</span><span class="h">notes</span>
+          <span class="pth">~/logs</span> <span class="ar">❯</span>
+        </span>
+        <input id="search" type="text" placeholder="type help for commands, or just search..." autocomplete="off" spellcheck="false" />
+        <span class="cursor" aria-hidden="true">█</span>
+      </label>
+
+      <div class="rule"><span id="rule-label">entries</span></div>
+
+      <div id="output" class="output" hidden></div>
+
+      <ul id="log-list" hidden>
+        {logs.map((log: Log) => (
+          <li
+            class="log"
+            data-title={log.data.title.toLowerCase()}
+            data-status={log.data.status}
+            data-date={log.data.pubDate.getTime()}
+            data-tags={'|' + log.data.tags.join('|').toLowerCase() + '|'}
+            data-summary={(log.data.summary ?? '').toLowerCase()}
+          >
+            <span class="date">{fmt(log.data.pubDate)}</span>
+            <span
+              class={`face face-${log.data.status}`}
+              role="img"
+              aria-label={log.data.status}
+              title={`${log.data.status}: ${faces[log.data.status].note}`}
+            >{faces[log.data.status].face}</span>
+            <div class="body">
+              <a class="title" href={`/logs/${log.id}/`}>{log.data.title}</a>
+              {log.data.summary && <div class="dim">{log.data.summary}</div>}
+              <div class="tags">
+                {log.data.tags.map((t: string) => (
+                  <button class="tag" data-tag={t.toLowerCase()}>#{t}</button>
+                ))}
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+
+      <p id="empty" class="empty" hidden>
+        <span class="face face-sad">(╥﹏╥)</span> no matches found.
+      </p>
+    </section>
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="side">
+
+      <fieldset class="box profile">
+        <legend>┤ profile ├</legend>
+        <div class="avatar">
+          <span class="avatar-ph" aria-hidden="true">(◕‿◕)</span>
+          <img src={profile.photo} alt={profile.name} onerror="this.remove()" />
+        </div>
+        <div class="who">
+          <strong>{profile.name}</strong>
+          <span class="handle">{profile.handle}</span>
+          <span class="dim">{profile.bio}</span>
+          <span class="online"><i></i> online</span>
+        </div>
+      </fieldset>
+
+      <fieldset class="box">
+        <legend>┤ legend ├</legend>
+        <div class="col" id="filters">
+          <button class="opt" data-filter="all">
+            <span class="face face-all">(•‿•)</span>
+            <span class="opt-name">all<small>everything</small></span>
+            <span class="n">{logs.length}</span>
+          </button>
+          {statusKeys.map((key) => (
+            <button class="opt" data-filter={key}>
+              <span class={`face face-${key}`}>{faces[key].face}</span>
+              <span class="opt-name">{faces[key].label}<small>{faces[key].note}</small></span>
+              <span class="n">{statusCount(key)}</span>
+            </button>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset class="box">
+        <legend>┤ sort ├</legend>
+        <div class="col" id="sorts">
+          <button class="opt" data-sort="newest"><span>↓</span><span>newest first</span><span></span></button>
+          <button class="opt" data-sort="oldest"><span>↑</span><span>oldest first</span><span></span></button>
+          <button class="opt" data-sort="az"><span>a</span><span>a → z</span><span></span></button>
+        </div>
+      </fieldset>
+
+      <fieldset class="box">
+        <legend>┤ tags ├</legend>
+        <div class="cloud">
+          {allTags.length === 0 && <span class="dim">no tags yet</span>}
+          {allTags.map(([t, n]) => (
+            <button class="chip" data-tag={t.toLowerCase()}>#{t} <span class="n">{n}</span></button>
+          ))}
+        </div>
+      </fieldset>
+
+      <fieldset class="box">
+        <legend>┤ actions ├</legend>
+        <div class="col">
+          <button id="reset" class="opt"><span>(&gt;_&lt;)</span><span>reset all</span><span></span></button>
+        </div>
+      </fieldset>
+
+    </aside>
+  </div>
+</Base>
+
+<script>
+  type Note = { id: string; title: string; status: string; tags: string[]; date: string; summary: string };
+  type Face = { face: string; label: string; note: string };
+
+  const data = JSON.parse(document.getElementById('app-data')!.textContent!) as {
+    notes: Note[];
+    faces: Record<string, Face>;
+    profile: { name: string; handle: string; bio: string };
+  };
+  const { notes, faces, profile } = data;
+  const statusKeys = ['experimenting', 'learned', 'evergreen'];
+
+  const list = document.getElementById('log-list')!;
+  const items = Array.from(list.querySelectorAll<HTMLElement>('.log'));
+  const search = document.getElementById('search') as HTMLInputElement;
+  const countEl = document.getElementById('count')!;
+  const emptyEl = document.getElementById('empty')!;
+  const output = document.getElementById('output')!;
+  const ruleLabel = document.getElementById('rule-label')!;
+
+  // nothing is highlighted on first load; these defaults mean "no filter"
+  let filter = 'all';
+  let sort = 'newest';
+  let tag = '';
+  let browsing = false; // entries stay hidden until the visitor asks for them
+
+  /* ---------- small helpers ---------- */
+  const esc = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const row = (a: string, b: string) => `<div class="orow"><b>${esc(a)}</b><span>${b}</span></div>`;
+  const err = (m: string) => `<span class="err">${esc(m)}</span>`;
+  const count = (s: string) => notes.filter((n) => n.status === s).length;
+  const first = (s: string) => s.trim().split(/\s+/)[0].toLowerCase();
+
+  /* ---------- output panel (replaces the entry list) ---------- */
+  let showingOutput = false;
+
+  function showOutput(html: string) {
+    output.innerHTML = html;
+    output.hidden = false;
+    list.hidden = true;
+    emptyEl.hidden = true;
+    ruleLabel.textContent = 'output';
+    showingOutput = true;
+  }
+
+  function hideOutput() {
+    output.hidden = true;
+    ruleLabel.textContent = 'entries';
+    showingOutput = false;
+    render(); // decides whether the list is visible
+  }
+
+  /* ---------- filtering, sorting, searching ---------- */
+  function currentQuery() {
+    const raw = search.value.trim().toLowerCase();
+    return isCmd(first(raw)) ? '' : raw;
+  }
+
+  function render() {
+    const q = currentQuery();
+    const show = browsing || q !== '';
+    list.hidden = !show;
+
+    items.forEach((li) => {
+      const d = li.dataset;
+      const text = `${d.title} ${d.tags} ${d.summary}`;
+      const okStatus = filter === 'all' || d.status === filter;
+      const okTag = !tag || d.tags!.includes(`|${tag}|`);
+      const okSearch = !q || text.includes(q);
+      li.hidden = !(okStatus && okTag && okSearch);
+    });
+
+    const sorted = [...items].sort((a, b) => {
+      if (sort === 'az') return a.dataset.title!.localeCompare(b.dataset.title!);
+      const diff = Number(a.dataset.date) - Number(b.dataset.date);
+      return sort === 'oldest' ? diff : -diff;
+    });
+    sorted.forEach((li) => list.appendChild(li));
+
+    const visible = show ? items.filter((li) => !li.hidden).length : 0;
+    countEl.textContent = String(visible);
+    emptyEl.hidden = !show || visible > 0 || showingOutput;
+  }
+
+  function mark(groupId: string, attr: string, value: string | null) {
+    document.querySelectorAll<HTMLElement>(`#${groupId} button`).forEach((b) => {
+      b.classList.toggle('active', value !== null && b.dataset[attr] === value);
+    });
+  }
+  function setFilter(v: string) { filter = v; browsing = true; mark('filters', 'filter', v); }
+  function setSort(v: string) { sort = v; browsing = true; mark('sorts', 'sort', v); }
+  function setTag(v: string) {
+    tag = v;
+    if (v) browsing = true;
+    document.querySelectorAll<HTMLElement>('[data-tag]').forEach((b) => {
+      b.classList.toggle('active', tag !== '' && b.dataset.tag === tag);
+    });
+  }
+  function resetAll() {
+    filter = 'all';
+    sort = 'newest';
+    browsing = false;
+    search.value = '';
+    mark('filters', 'filter', null);
+    mark('sorts', 'sort', null);
+    setTag('');
+  }
+
+  /* ---------- the commands ---------- */
+  const HELP_ROWS: [string, string][] = [
+    ['help', 'show this list'],
+    ['ls', 'show all entries (resets filters)'],
+    ['cat <name>', 'open a note, part of the title works'],
+    ['random', 'open a random note'],
+    ['tags', 'every tag with counts'],
+    ['legend', 'what the faces mean'],
+    ['stats', 'quick numbers'],
+    ['filter <status>', 'experimenting, learned, evergreen or all'],
+    ['tag <name>', 'show entries with a tag'],
+    ['sort <how>', 'newest, oldest or az'],
+    ['theme [dark|light]', 'switch theme'],
+    ['whoami', 'about me'],
+    ['clear', 'reset everything and hide entries'],
+  ];
+
+  const HELP =
+    `<div class="oh">available commands</div>` +
+    HELP_ROWS.map(([c, d]) => row(c, esc(d))).join('') +
+    `<div class="dim">anything else you type searches titles, tags and summaries.</div>` +
+    `<div class="dim">commands run on ↵ · esc closes this panel · ↑ ↓ cycles history · / jumps to the bar</div>`;
+
+  function openNote(a: string[]) {
+    const q = a.join(' ').toLowerCase();
+    if (!q) return err('usage: cat <name>');
+    const exact = notes.find((n) => n.id.toLowerCase() === q);
+    const hits = exact ? [exact] : notes.filter(
+      (n) => n.id.toLowerCase().includes(q) || n.title.toLowerCase().includes(q)
+    );
+    if (hits.length === 0) return err(`cat: no note matches '${q}'`);
+    if (hits.length > 1) {
+      return `<div>${hits.length} notes match, be more specific:</div>` +
+        hits.map((n) => row(n.id, esc(n.title))).join('');
+    }
+    location.href = `/logs/${hits[0].id}/`;
+    return `opening <b>${esc(hits[0].title)}</b> …`;
+  }
+
+  const commands: Record<string, (a: string[]) => string | void> = {
+    help: () => HELP,
+
+    ls: () => { resetAll(); browsing = true; },
+    clear: () => { resetAll(); },
+    reset: () => { resetAll(); },
+
+    cat: (a) => openNote(a),
+    open: (a) => openNote(a),
+
+    random: () => {
+      if (!notes.length) return err('no notes yet');
+      const n = notes[Math.floor(Math.random() * notes.length)];
+      location.href = `/logs/${n.id}/`;
+      return `opening <b>${esc(n.title)}</b> …`;
+    },
+
+    tags: () => {
+      const m = new Map<string, number>();
+      notes.forEach((n) => n.tags.forEach((t) => m.set(t, (m.get(t) ?? 0) + 1)));
+      if (!m.size) return '<span class="dim">no tags yet</span>';
+      return [...m.entries()]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([t, c]) => row('#' + t, `${'█'.repeat(Math.min(c, 20))} ${c}`))
+        .join('') + `<div class="dim">tip: tag &lt;name&gt; filters by one</div>`;
+    },
+
+    legend: () =>
+      statusKeys.map((k) =>
+        `<div class="lrow"><span class="face face-${k}">${esc(faces[k].face)}</span>` +
+        `<b>${esc(k)}</b><span class="dim">${esc(faces[k].note)} · ${count(k)}</span></div>`
+      ).join(''),
+
+    stats: () => {
+      const byDate = [...notes].sort((a, b) => a.date.localeCompare(b.date));
+      const tagTotal = new Set(notes.flatMap((n) => n.tags)).size;
+      let html = row('entries', String(notes.length));
+      statusKeys.forEach((k) => { html += row(k, `${esc(faces[k].face)}  ${count(k)}`); });
+      html += row('tags', String(tagTotal));
+      if (byDate.length) {
+        const f = byDate[0];
+        const l = byDate[byDate.length - 1];
+        html += row('first', `${f.date}  ${esc(f.title)}`);
+        html += row('latest', `${l.date}  ${esc(l.title)}`);
+      }
+      return html;
+    },
+
+    filter: (a) => {
+      const v = (a[0] ?? '').toLowerCase();
+      if (v !== 'all' && !statusKeys.includes(v)) {
+        return err(`filter: unknown status '${a[0] ?? ''}'. try experimenting, learned, evergreen or all`);
+      }
+      setFilter(v);
+    },
+
+    tag: (a) => {
+      const v = (a[0] ?? '').replace(/^#/, '').toLowerCase();
+      if (!v) { setTag(''); return; }
+      if (!notes.some((n) => n.tags.some((t) => t.toLowerCase() === v))) {
+        return err(`tag: nothing is tagged '${v}'. type tags to see them all`);
+      }
+      setTag(v);
+    },
+
+    sort: (a) => {
+      const v = (a[0] ?? '').toLowerCase();
+      if (!['newest', 'oldest', 'az'].includes(v)) return err('sort: try newest, oldest or az');
+      setSort(v);
+    },
+
+    theme: (a) => {
+      const cur = document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+      const v = (a[0] ?? '').toLowerCase();
+      const next = v === 'light' || v === 'dark' ? v : cur === 'light' ? 'dark' : 'light';
+      if (next !== cur) document.querySelector<HTMLElement>('[data-theme-toggle]')?.click();
+      return `theme → <b>${next}</b>`;
+    },
+
+    whoami: () =>
+      row('name', esc(profile.name)) + row('handle', esc(profile.handle)) + row('bio', esc(profile.bio)),
+  };
+
+  const isCmd = (c: string) => Object.prototype.hasOwnProperty.call(commands, c);
+
+  function run(raw: string) {
+    const [c, ...args] = raw.trim().split(/\s+/);
+    const out = commands[c.toLowerCase()](args);
+    if (typeof out === 'string') {
+      showOutput(`<div class="echo">❯ ${esc(raw.trim())}</div>${out}`);
+    } else {
+      hideOutput();
+    }
+  }
+
+  /* ---------- the search / command bar ---------- */
+  const hist: string[] = [];
+  let hi = -1;
+
+  // typing never runs a command: plain text live-searches, commands wait for Enter
+  search.addEventListener('input', () => hideOutput());
+
+  search.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const raw = search.value.trim();
+      if (raw && isCmd(first(raw))) {
+        hist.unshift(raw);
+        hi = -1;
+        search.value = '';
+        run(raw);
+      }
+    } else if (e.key === 'Escape') {
+      search.value = '';
+      hideOutput();
+    } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      if (!hist.length) return;
+      e.preventDefault();
+      hi = e.key === 'ArrowUp' ? Math.min(hi + 1, hist.length - 1) : Math.max(hi - 1, -1);
+      search.value = hi === -1 ? '' : hist[hi];
+      search.dispatchEvent(new Event('input'));
+    }
+  });
+
+  // press / anywhere to jump to the bar
+  document.addEventListener('keydown', (e) => {
+    const t = e.target as HTMLElement;
+    if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(t.tagName)) {
+      e.preventDefault();
+      search.focus();
+    }
+  });
+
+  /* ---------- buttons ---------- */
+  document.querySelectorAll<HTMLButtonElement>('#filters button').forEach((btn) => {
+    btn.addEventListener('click', () => { setFilter(btn.dataset.filter!); hideOutput(); });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('#sorts button').forEach((btn) => {
+    btn.addEventListener('click', () => { setSort(btn.dataset.sort!); hideOutput(); });
+  });
+
+  // tags: sidebar chips and tags inside entries; click again to clear
+  document.addEventListener('click', (e) => {
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-tag]');
+    if (!el) return;
+    setTag(tag === el.dataset.tag ? '' : el.dataset.tag!);
+    hideOutput();
+  });
+
+  document.getElementById('reset')!.addEventListener('click', () => {
+    resetAll();
+    hideOutput();
+  });
+</script>
